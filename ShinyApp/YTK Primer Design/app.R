@@ -70,9 +70,10 @@ gcContent = function(s) {
   return(str_count(s, "[GC]")/str_length(s))
 }
 
-
+#Wallace formula, 
 #Tm= 64.9 +41*(yG+zC-16.4)/(wA+xT+yG+zC)
-#from: http://insilico.ehu.es/tm.php?formula=basic
+#Wallace formula: Tm = 64.9 +41*(yG+zC-16.4)/(wA+xT+yG+zC)
+#Wallace RB et al. (1979) Nucleic Acids Res 6:3543-3557, PMID 158748
 meltTemp = function(s) {
   wA = str_count(s, "A")
   xT = str_count(s, "T")
@@ -98,14 +99,23 @@ univStartTag = "GCATCGTCTCATCGGTCTCA"
 univEndTag = "TGAGACCTGAGACGGCAT"
 
 startValueNames = c("Type 2", "Type 3", "Type 3A", "Type 3B", "Type 4", "Type 4A", "Type 4B", "Type 6", "Type 7", "Type 8", "Type 8A", "Type 8B")
-startValueVals = c("AACG", "TATG", "TATG", "TTCT", "ATCCTAACTCGAG", "ATCC", "TGGC", "TACA", "GAGT", "CCGAGCGGCCGC", "CCGAGCGGCCGC", "CAAT")
+startValueVals = c("AACG", "TATG", "TATG", "TTCT", "ATCC", "ATCC", "TGGC", "TACA", "GAGT", "CCGA", "CCGA", "CAAT")
+startValueExtras = c("", "", "", "", "CTCGAG", "", "", "", "", "GCGGCCGC", "GCGGCCGC", "")
+startValueStopCodons = c("", "", "", "", "TAA", "", "", "", "", "", "", "")
+
 
 endValueNames = c("Type 2", "Type 3", "Type 3A", "Type 3B", "Type 4", "Type 4A", "Type 4B", "Type 6", "Type 7", "Type 8", "Type 8A", "Type 8B")
-endValueVals = c("AGATCTATG", "GGATCC", "GGTTCT", "GGATCC", "GCTG", "TAACTCGAGTGGC", "GCTG", "GAGT", "CCGA", "GCGGCCGCCCCT", "GCGGCCGCCAAT", "CCCT")
+endValueVals = c("TATG", "ATCC", "TTCT", "ATCC", "GCTG", "TGGC", "GCTG", "GAGT", "CCGA", "CCCT", "CAAT", "CCCT")
+endValueExtras = c("AGATC", "GG", "GG", "GG", "", "CTCGAG", "", "", "", "GCGGCCGC", "GCGGCCGC", "")
+endValueStopCodons = c("", "", "", "", "", "TAA", "", "", "", "", "", "")
 
 enzymeRecSitesIds = c("BsaI", "BsmBI", "NotI", "BglII", "BamHI", "XhoI")
 enzymeRecSitesSeqs = c("GGTCTC", "CGTCTC", "GCGGCCGC", "AGATCT", "GGATCC", "CTCGAG")
-
+enzymeRecExtraTexts = c("", "", " (NotI is used for linearisation of integration cassettes)",
+                        " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)",
+                        " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)",
+                        " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)")
+                        
 
 #startChoices = startValueVals
 #names(startChoices) = startValueNames
@@ -117,6 +127,7 @@ enzymeRecSitesSeqs = c("GGTCTC", "CGTCTC", "GCGGCCGC", "AGATCT", "GGATCC", "CTCG
 
 ui <- fluidPage(
   titlePanel("Yeast Toolkit Primer Design Tool"), 
+  p("Here goes a nice description of the tool"),
   fluidRow(
     column(12,
            textAreaInput2("inputSeq", "Input sequence", width="100%", resize="none", cols=140, rows=8)
@@ -133,7 +144,6 @@ ui <- fluidPage(
                        column(4, checkboxInput("filterCheck", "Filter primers", T)),
                        column(4, actionButton("genButton", "Gen. primers",  width = "100%")),
                        column(4,actionButton("expButton", "Export FASTA",  width = "100%"))
-                       #column(4, downloadButton('downloadSeq', 'Download',  width = "100%"))
                      )
                      
            )
@@ -170,8 +180,12 @@ onGenButton = function(input, output, session) {
   inp = paste0(input$inputSeq)
   sq = cleanupSeq(inp)
   startTag = lookup(input$startCombo, startValueNames, startValueVals)
+  startValueExtra = lookup(input$startCombo, startValueNames, startValueExtras)
+  startValueStopCodon = lookup(input$startCombo, startValueNames, startValueStopCodons)
   endTag = lookup(input$endCombo, endValueNames, endValueVals)
-
+  endValueExtra = lookup(input$endCombo, endValueNames, endValueExtras)
+  endValueStopCodon = lookup(input$endCombo, endValueNames, endValueStopCodons)
+  
 
   dfFwd <- data.frame(Sequence=character(),
                       GCCont=double(), 
@@ -188,7 +202,8 @@ onGenButton = function(input, output, session) {
   for (le in 17:28) {
     forwardPrimer = substr(sq, 1, le)
     if ((!input$filterCheck) | checkPrimer(forwardPrimer)) {
-      fwdPrimTot = paste0(univStartTag, startTag, forwardPrimer)
+#      fwdPrimTot = paste0(tolower(univStartTag), "<b>", tolower(startTag), '</b><span style="color:red">', tolower(startValueStopCodon), "</span><u>", tolower(startValueExtra), "</u>", forwardPrimer)
+      fwdPrimTot = paste0(tolower(univStartTag), "<b>", tolower(startTag), '</b>', tolower(startValueStopCodon), tolower(startValueExtra), forwardPrimer)
       dfFwd = rbind(dfFwd, c(fwdPrimTot,
                              round(gcContent(forwardPrimer), 2),
                              le,
@@ -197,7 +212,8 @@ onGenButton = function(input, output, session) {
     
     reversePrimer = reverse(substr(sq, str_length(sq) - le + 1, str_length(sq))) #reverses automatically
     if ((!input$filterCheck) | checkPrimer(reversePrimer)) {
-      revPrimTot = paste0(complementary(reverse(univEndTag)), endTag, complementary(reversePrimer)) 
+      #revPrimTot = paste0(tolower(complementary(reverse(univEndTag))), '<span style="color:red">', tolower(endValueStopCodon),"</span><u>", tolower(endValueExtra),"</u><b>", tolower(endTag), "</b>", complementary(reversePrimer)) 
+      revPrimTot = paste0(tolower(complementary(reverse(univEndTag))), tolower(endValueStopCodon), tolower(endValueExtra),"<b>", tolower(endTag), "</b>", complementary(reversePrimer)) 
       dfRev = rbind(dfRev, c(revPrimTot,
                              round(gcContent(reversePrimer), 2),
                              le,
@@ -210,8 +226,8 @@ onGenButton = function(input, output, session) {
   colnames(dfFwd) = c("Primer sequence", "GC", "Len", "Melt Tm")
   colnames(dfRev) = c("Primer sequence", "GC", "Len", "Melt Tm")
   
-  output$outpFwd = DT::renderDataTable(DT::datatable({dfFwd}, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))#, autoWidth = TRUE,
-  output$outpRev = DT::renderDataTable(DT::datatable({dfRev}, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))#, autoWidth = TRUE,
+  output$outpFwd = DT::renderDataTable(DT::datatable({dfFwd}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
+  output$outpRev = DT::renderDataTable(DT::datatable({dfRev}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
 
   #Warnings:
   strWarn = ""
@@ -219,7 +235,7 @@ onGenButton = function(input, output, session) {
     ind = strfind(sq, enzymeRecSitesSeqs[i])
     print(ind)
     for (a in ind) {
-      strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in seq: ", enzymeRecSitesIds[i], ": ", enzymeRecSitesSeqs[i], " at pos ", a, "\n")
+      strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in seq: ", enzymeRecSitesIds[i], ": ", enzymeRecSitesSeqs[i], " at pos ", a, enzymeRecExtraTexts[i], "\n")
     }
   }
   #issue warnings for certain parts, since the start/end codon is included in the primer
