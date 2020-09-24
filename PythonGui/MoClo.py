@@ -199,7 +199,7 @@ def onGenButton():
             warnings.insert(str(warnInd) + ".0", "Restr. enzyme recogn. site found in seq: " + enzymeRecSitesIds[i] + ": " + enzymeRecSitesSeqs[i] + " at pos " + str(a) + "\n")
             warnInd += 1
     #issue warnings for certain parts, since the start/end codon is included in the primer
-    if startId == "Type 3" | startId == "Type 3A":
+    if (startId == "Type 3") | (startId == "Type 3A"):
         warnings.insert(str(warnInd) + ".0",
                         "Start codon is already included in fwd primer. Do not include stop codon in pasted sequence if part will be used as fusion or tagged protein.\n")
         warnInd += 1
