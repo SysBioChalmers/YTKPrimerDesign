@@ -25,6 +25,7 @@ def compChar(s):
 print(compChar("A"))
 
 def cleanupSeq(s):
+    s = s.upper()
     ret = ""
     for i in range(len(s)):
         if (s[i] == 'A') | (s[i] == 'T') | (s[i] == 'C') | (s[i] == 'G'):

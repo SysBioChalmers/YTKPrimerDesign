@@ -5,6 +5,7 @@ library(stringr)
 library(shinyBS)
 #install.packages("pracma")
 library(pracma)
+library(qdapTools)
 
 #runExample("01_hello")
 
@@ -33,6 +34,7 @@ textAreaInput2 <- function (inputId, label, value = "", width = NULL, height = N
 
 #super inefficent, but that doesn't really matter
 cleanupSeq = function(s) {
+  s = toupper(s)
   if (str_length(s) == 0) {
     return(s)
   }
@@ -114,7 +116,7 @@ enzymeRecSitesSeqs = c("GGTCTC", "CGTCTC", "GCGGCCGC", "AGATCT", "GGATCC", "CTCG
 
 
 ui <- fluidPage(
-  titlePanel("MoClo Design Tool"), 
+  titlePanel("Yeast Toolkit Primer Design Tool"), 
   fluidRow(
     column(12,
            textAreaInput2("inputSeq", "Input sequence", width="100%", resize="none", cols=140, rows=8)
@@ -202,8 +204,8 @@ onGenButton = function(input, output, session) {
                              round(meltTemp(reversePrimer), 1)), stringsAsFactors=F)
     }
   }
-  print(forwardPrimer)
-  print(reversePrimer)
+#  print(forwardPrimer)
+#  print(reversePrimer)
   
   colnames(dfFwd) = c("Primer sequence", "GC", "Len", "Melt Tm")
   colnames(dfRev) = c("Primer sequence", "GC", "Len", "Melt Tm")
