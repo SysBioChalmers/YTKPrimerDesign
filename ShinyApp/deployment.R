@@ -8,4 +8,4 @@ rsconnect::setAccountInfo(name='johan-gson', token='8F82E4588E476DE913B8A5A09839
 
 library(rsconnect)
 rsconnect::deployApp('C:/Work/MatlabCode/projects/YTKPrimerDesign/YTKPrimerDesign/ShinyApp/YTK Primer Design')
-rsconnect::deployApp('C:/Work/MatlabCode/projects/YTKPrimerDesign/YTKPrimerDesign/ShinyApp/The other tool')
+rsconnect::deployApp('C:/Work/MatlabCode/projects/YTKPrimerDesign/YTKPrimerDesign/ShinyApp/MultigRNA')
