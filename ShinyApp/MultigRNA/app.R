@@ -40,27 +40,49 @@ ui <- fluidPage(
   p("Here goes a nice description of the tool"),
   fluidRow(
     column(3,
-           textInput("part1", "Sequence part 1", "CAACAAGTTATTACTCAAA", width="100%"),
-           textInput("part5", "Sequence part 5", "TTGGTTGATGATAGATTCA", width="100%"),
-           textInput("part9", "Sequence part 9", "TTCAAATCTCTGATTCTAT", width="100%")
+           textInput("part1", "Sequence part 1", width="100%"),
+           textInput("part5", "Sequence part 5", width="100%"),
+           textInput("part9", "Sequence part 9", width="100%")
     ),
     column(3,
-           textInput("part2", "Sequence part 2", "AGAAATCTGAAGGTTTGGC", width="100%"),
-           textInput("part6", "Sequence part 6", "CTACTGATTCTACAAAAAG", width="100%"),
-           textInput("part10", "Sequence part 10", "ATCACAAGAACAACCAATC", width="100%")
+           textInput("part2", "Sequence part 2", width="100%"),
+           textInput("part6", "Sequence part 6", width="100%"),
+           textInput("part10", "Sequence part 10", width="100%")
     ),
     column(3,
-           textInput("part3", "Sequence part 3", "GATAAGGATCCAATTAAAG", width="100%"),
-           textInput("part7", "Sequence part 7", "GCAACTGCTGCAATGGCAA", width="100%"),
-           textInput("part11", "Sequence part 11", "ACACCATTAGTTAAGGAAC", width="100%"),
+           textInput("part3", "Sequence part 3", width="100%"),
+           textInput("part7", "Sequence part 7", width="100%"),
+           textInput("part11", "Sequence part 11", width="100%"),
            
     ),
     column(3,
-           textInput("part4", "Sequence part 4", "CAAGATACATGGTATTACC", width="100%"),
-           textInput("part8", "Sequence part 8", "CACCAGATATCGCTAACGA", width="100%"),
-           textInput("part12", "Sequence part 12", "TGCAATCAATTAATTTGCC", width="100%")
+           textInput("part4", "Sequence part 4", width="100%"),
+           textInput("part8", "Sequence part 8", width="100%"),
+           textInput("part12", "Sequence part 12", width="100%")
     )
-  ),
+#    fluidRow(
+#      column(3,
+#             textInput("part1", "Sequence part 1", "CAACAAGTTATTACTCAAA", width="100%"),
+#             textInput("part5", "Sequence part 5", "TTGGTTGATGATAGATTCA", width="100%"),
+#             textInput("part9", "Sequence part 9", "TTCAAATCTCTGATTCTAT", width="100%")
+#      ),
+#      column(3,
+#             textInput("part2", "Sequence part 2", "AGAAATCTGAAGGTTTGGC", width="100%"),
+#             textInput("part6", "Sequence part 6", "CTACTGATTCTACAAAAAG", width="100%"),
+#             textInput("part10", "Sequence part 10", "ATCACAAGAACAACCAATC", width="100%")
+#      ),
+#      column(3,
+#             textInput("part3", "Sequence part 3", "GATAAGGATCCAATTAAAG", width="100%"),
+#             textInput("part7", "Sequence part 7", "GCAACTGCTGCAATGGCAA", width="100%"),
+#             textInput("part11", "Sequence part 11", "ACACCATTAGTTAAGGAAC", width="100%"),
+#             
+#      ),
+#      column(3,
+#             textInput("part4", "Sequence part 4", "CAAGATACATGGTATTACC", width="100%"),
+#             textInput("part8", "Sequence part 8", "CACCAGATATCGCTAACGA", width="100%"),
+#             textInput("part12", "Sequence part 12", "TGCAATCAATTAATTTGCC", width="100%")
+#      )
+    ),
   fluidRow(
     column(3,
            textInput("stickyStart", "Start sticky end sequence", "ttta", width="100%")
@@ -212,7 +234,7 @@ filterFindSeqCombData = function() {
       pcs = piecesLoc[[part]]
       confl = conflPiecesLoc[[part]]
       for (i in 1:numCuts) {
-        if (any(pcs[[i]] %in% confl[[i]][3:4]) | any(startEndPieces %in% confl[[i]][3:4])) {
+        if (any(pcs[[i]] %in% confl[[i]][3:4]) | any(startEndPieces %in% confl[[i]][1:4])) { #first check is compatible with self, second with start and end tags
           toRem = c(toRem, i)
           print(paste0("Removing: ", cutSeqsLoc[[part]][[i]]))
         } 
