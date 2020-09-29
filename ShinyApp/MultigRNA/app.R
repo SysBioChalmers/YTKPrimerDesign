@@ -29,6 +29,8 @@ reverse = function(s) {
 }
 
 
+enzymeRecSitesIds = c("BsmBI", "BsaI")
+enzymeRecSitesSeqs = c("CGTCTC", "GGTCTC")
 
 
 
@@ -74,6 +76,12 @@ ui <- fluidPage(
   fluidRow(
     column(6,
            actionButton("genButton", "Generate primers",  width = "100%", height="100%")
+    ),
+    column(6,
+           uiOutput("warningsTitle"),
+           verbatimTextOutput("warnings"),
+           tags$head(tags$style("#warnings{color: red;overflow-y:scroll;max-height: 100px;}"))
+           
     )
   ),
   fluidRow(
@@ -300,7 +308,7 @@ extractPositions = function(seqs) {
   }
 }
 
-fwdFill = "gcaf" #just space filler
+fwdFill = "gcat" #just space filler
 revFill = "atgc" #just space filler
 enz = "cgtctc" # recognition site for the restriction enzyme
 standardFwdEnd = "GTTTTAGAGCTAGAAATAGCAAGTTAA"
@@ -341,10 +349,6 @@ genPrimers = function(positions) {
   }
   
   return(list(fwdPrimers, revPrimers))
-  
-  #first forward
-  #fwd1 = paste0(fwdFill, enz, "a", toLower(startTag), substring(partStrings[[1]], 1, positions[[1]]+3), standardFwdEnd)
-  #rev1 = paste0(revFill, enz, "a", toLower(startTag), substring(partStrings[[1]], 1, positions[[1]]+3), standardRevEnd)
 }
 
 
@@ -399,12 +403,10 @@ testStuff = function() {
     newSeqs[[i]] = substr(partStrings[[i]], positions[i], positions[i]+3)
   }
   all(expRes == newSeqs)
-  
-  
 }
 
-
 onGenButton = function(input, output, session) {
+  strWarn = ""
   res = setGlobalVars(input)
   if (res[[1]]) {
     prepareFindSeqCombData()
@@ -427,6 +429,29 @@ onGenButton = function(input, output, session) {
       colnames(dfPrim) = c("Forward primer", "Reverse primer")
       
       output$outpPrim = DT::renderDataTable(DT::datatable({dfPrim}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
+      
+      allSeqs = c(startPart, partStrings, endPart)
+        partStrings = NULL
+      startPart = NULL
+      endPart = NULL
+      
+      for (s in 1:length(allSeqs)) {
+        for (i in 1:length(enzymeRecSitesIds)) {
+          ind = strfind(allSeqs[[s]], enzymeRecSitesSeqs[i])
+          if (length(ind) > 0) {
+            strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in seq: ", enzymeRecSitesIds[i], ": ", enzymeRecSitesSeqs[i], " in part ", s, "\n")
+          }
+          #if the enzymes are not the same after reverse and complement (which some are), look for the reverse complement as well
+          #This was tested manually
+          revCompl = reverse(complementary(enzymeRecSitesSeqs[i]))
+          if (enzymeRecSitesSeqs[i] != revCompl) {
+            ind = strfind(allSeqs[[s]], revCompl)
+            if (length(ind) > 0) {
+              strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in the reverse compl. seq: ", enzymeRecSitesIds[i], ": ", revCompl, " in part ", s, "\n")
+            }
+          }
+        }
+      }
     } else {
       showModal(modalDialog(
         title = "Generation failure.",
@@ -435,7 +460,6 @@ onGenButton = function(input, output, session) {
         footer = NULL
       ))
       output$outpPrim = DT::renderDataTable(DT::datatable({NULL}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
-      
     }
   } else {
     showModal(modalDialog(
@@ -446,9 +470,13 @@ onGenButton = function(input, output, session) {
     ))
     output$outpPrim = DT::renderDataTable(DT::datatable({NULL}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
   }
+  if (strWarn == "") {
+    output$warningsTitle = renderText("")
+  } else {
+    output$warningsTitle = renderText({HTML("<b>Warnings</b>")})
+  }
+  output$warnings = renderText(strWarn)
 }
-
-
 
 server <- function(input, output, session) {
   observeEvent(input$genButton, {
