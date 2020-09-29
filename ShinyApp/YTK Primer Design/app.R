@@ -233,9 +233,17 @@ onGenButton = function(input, output, session) {
   strWarn = ""
   for (i in 1:length(enzymeRecSitesIds)) {
     ind = strfind(sq, enzymeRecSitesSeqs[i])
-    print(ind)
     for (a in ind) {
       strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in seq: ", enzymeRecSitesIds[i], ": ", enzymeRecSitesSeqs[i], " at pos ", a, enzymeRecExtraTexts[i], "\n")
+    }
+    #if the enzymes are not the same after reverse and complement (which some are), look for the reverse complement as well
+    #This was tested manually
+    revCompl = reverse(complementary(enzymeRecSitesSeqs[i]))
+    if (enzymeRecSitesSeqs[i] != revCompl) {
+      ind = strfind(sq, revCompl)
+      for (a in ind) {
+        strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in the reverse compl. seq: ", enzymeRecSitesIds[i], ": ", revCompl, " at pos ", a, enzymeRecExtraTexts[i], "\n")
+      }
     }
   }
   #issue warnings for certain parts, since the start/end codon is included in the primer
