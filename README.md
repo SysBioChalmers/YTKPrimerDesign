@@ -5,8 +5,9 @@ To run the shiny apps locally on your computer, do the following:
 1. Make sure you have R and RStudio installed
 2. Install the shiny package:
 install.packages("shiny")
-3. Open the app.R file for your app (there are two apps in different folders)
-4. Press the button "Run App" in the top right corner of the editor window.
+3. Download this repo somewhere on your disk.
+4. Open the app.R file for your app (there are two apps in different folders)
+5. Press the button "Run App" in the top right corner of the editor window.
 
 
 
