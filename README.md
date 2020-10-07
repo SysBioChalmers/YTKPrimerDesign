@@ -1,7 +1,19 @@
 # YTKPrimerDesign
-Python gui and shiny app for primer generation
+This repo contains two shiny apps for primer design any an outdated python app.
 
-The python program requires the python package primer3-py.
+To run the shiny apps locally on your computer, do the following:
+1. Make sure you have R and RStudio installed
+2. Install the shiny package:
+install.packages("shiny")
+3. Download this repo somewhere on your disk.
+4. Open the app.R file for your app (there are two apps in different folders)
+5. Press the button "Run App" in the top right corner of the editor window.
+
+
+
+
+The python program is a bit outdated and is not recommended, it was intended to do the same as one of the apps.
+It requires the python package primer3-py.
 
 To run the python program in PyCharm, do the following:
 
