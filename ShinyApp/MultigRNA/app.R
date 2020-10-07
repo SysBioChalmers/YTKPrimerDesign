@@ -37,77 +37,105 @@ enzymeRecSitesSeqs = c("CGTCTC", "GGTCTC")
 
 ui <- fluidPage(
   titlePanel("MultigRNA"), 
-  p("Here goes a nice description of the tool"),
-  fluidRow(
-    column(3,
-           textInput("part1", "Sequence part 1", width="100%"),
-           textInput("part5", "Sequence part 5", width="100%"),
-           textInput("part9", "Sequence part 9", width="100%")
+  tabsetPanel(
+    id = 'mainTab',
+    tabPanel("Application",
+      p(HTML("<br>")),
+      fluidRow(
+        column(3,
+               textInput("part1", "gRNA 1 sequence", width="100%"),
+               textInput("part5", "gRNA 5 sequence", width="100%"),
+               textInput("part9", "gRNA 9 sequence", width="100%")
+        ),
+        column(3,
+               textInput("part2", "gRNA 2 sequence", width="100%"),
+               textInput("part6", "gRNA 6 sequence", width="100%"),
+               textInput("part10", "gRNA 10 sequence", width="100%")
+        ),
+        column(3,
+               textInput("part3", "gRNA 3 sequence", width="100%"),
+               textInput("part7", "gRNA 7 sequence", width="100%"),
+               textInput("part11", "gRNA 11 sequence", width="100%"),
+               
+        ),
+        column(3,
+               textInput("part4", "gRNA 4 sequence", width="100%"),
+               textInput("part8", "gRNA 8 sequence", width="100%"),
+               textInput("part12", "gRNA 12 sequence", width="100%")
+        )
+    #    fluidRow(
+    #      column(3,
+    #             textInput("part1", "Sequence part 1", "CAACAAGTTATTACTCAAA", width="100%"),
+    #             textInput("part5", "Sequence part 5", "TTGGTTGATGATAGATTCA", width="100%"),
+    #             textInput("part9", "Sequence part 9", "TTCAAATCTCTGATTCTAT", width="100%")
+    #      ),
+    #      column(3,
+    #             textInput("part2", "Sequence part 2", "AGAAATCTGAAGGTTTGGC", width="100%"),
+    #             textInput("part6", "Sequence part 6", "CTACTGATTCTACAAAAAG", width="100%"),
+    #             textInput("part10", "Sequence part 10", "ATCACAAGAACAACCAATC", width="100%")
+    #      ),
+    #      column(3,
+    #             textInput("part3", "Sequence part 3", "GATAAGGATCCAATTAAAG", width="100%"),
+    #             textInput("part7", "Sequence part 7", "GCAACTGCTGCAATGGCAA", width="100%"),
+    #             textInput("part11", "Sequence part 11", "ACACCATTAGTTAAGGAAC", width="100%"),
+    #             
+    #      ),
+    #      column(3,
+    #             textInput("part4", "Sequence part 4", "CAAGATACATGGTATTACC", width="100%"),
+    #             textInput("part8", "Sequence part 8", "CACCAGATATCGCTAACGA", width="100%"),
+    #             textInput("part12", "Sequence part 12", "TGCAATCAATTAATTTGCC", width="100%")
+    #      )
+        ),
+      fluidRow(
+        column(3,
+               textInput("stickyStart", "Start sticky end sequence", "ttta", width="100%")
+        ),
+        column(3,
+               textInput("stickyEnd", "End sticky end sequence", "tggc", width="100%")
+        ),
+        column(3,
+               textInput("sideMargin", "Min. part split size", "3", width="100%")
+        ),
+        column(3)
+      ),
+      fluidRow(
+        column(6,
+               actionButton("genButton", "Generate primers",  width = "100%", height="100%")
+        ),
+        column(6,
+               uiOutput("warningsTitle"),
+               verbatimTextOutput("warnings"),
+               tags$head(tags$style("#warnings{color: red;overflow-y:scroll;max-height: 100px;}"))
+               
+        )
+      ),
+      fluidRow(
+        column(12, DT::dataTableOutput("outpPrim", width="100%"))
+      )
     ),
-    column(3,
-           textInput("part2", "Sequence part 2", width="100%"),
-           textInput("part6", "Sequence part 6", width="100%"),
-           textInput("part10", "Sequence part 10", width="100%")
-    ),
-    column(3,
-           textInput("part3", "Sequence part 3", width="100%"),
-           textInput("part7", "Sequence part 7", width="100%"),
-           textInput("part11", "Sequence part 11", width="100%"),
-           
-    ),
-    column(3,
-           textInput("part4", "Sequence part 4", width="100%"),
-           textInput("part8", "Sequence part 8", width="100%"),
-           textInput("part12", "Sequence part 12", width="100%")
+    tabPanel("Instructions", 
+             h2("Summary"),
+             p(HTML("This tool is published in 'our reference'. It is based on the multiplexed gRNA expression with 
+                    the use of Csy4 endonuclease (Ferreira et al. 2018). The cloning strategy is based on the vector 
+                    pYTK050 from Lee et al. (2015) which is a vector for gRNA cloning via Golden Gate assembly 
+                    (Engler et al. 2008). The gRNAs are cloned in the place of a GFP gene or a yeast counterselection 
+                    marker. The cloning position has two BsmBI recognition sites and the 3' and 5' sticky ends can vary 
+                    according to the destination vector. The present tool designs primers for multiplexed gRNA cloning 
+                    as described in 'our reference' and avoids the presence of more than 3 nucleotides in a row in 
+                    common in two sticky ends. The template for all PCR reactions is the plasmid pMCL008_28bp which 
+                    has a gRNA scaffold followed by a 28bp Csy4 recognition loop. The resulting PCR products can be 
+                    used for Golden Gate cloning. This tool can develop primers for cloning up to 12 gRNAs in a single 
+                    transcript.<br>")),
+             h2("Instructions"),
+             p(HTML("  1. Write the starting and ending sticky end sequences that will be created with BsmBI digestion of the destination vector.<br>")),
+             p(HTML("  2. Paste the 20bp gRNA sequence in the 'gRNA' boxes. If less than 12 gRNAs will be cloned, leave the rest of the boxes blank.<br>")),
+             p(HTML("  3. Click on 'Generate primers'. A pair of primers for each fragment will appear. If any of the gRNAs to be cloned has a BsmBI position a warning will appear.<br>")),
+             h2("References"),
+             p(HTML("Our reference<br>")),
+             p(HTML('Ferreira, Raphael, et al. "Multiplexed CRISPR/Cas9 genome editing and gene regulation using Csy4 in Saccharomyces cerevisiae." ACS synthetic biology 7.1 (2018): 10-15.<br>')),
+             p(HTML('Lee, M. E., et al. (2015). "A Highly Characterized Yeast Toolkit for Modular, Multipart Assembly." ACS Synthetic Biology 4(9): 975-986.<br>')),
+             p(HTML('Engler, C., et al. (2008). "A One Pot, One Step, Precision Cloning Method with High Throughput Capability." PLoS One 3(11): e3647.<br>')),
     )
-#    fluidRow(
-#      column(3,
-#             textInput("part1", "Sequence part 1", "CAACAAGTTATTACTCAAA", width="100%"),
-#             textInput("part5", "Sequence part 5", "TTGGTTGATGATAGATTCA", width="100%"),
-#             textInput("part9", "Sequence part 9", "TTCAAATCTCTGATTCTAT", width="100%")
-#      ),
-#      column(3,
-#             textInput("part2", "Sequence part 2", "AGAAATCTGAAGGTTTGGC", width="100%"),
-#             textInput("part6", "Sequence part 6", "CTACTGATTCTACAAAAAG", width="100%"),
-#             textInput("part10", "Sequence part 10", "ATCACAAGAACAACCAATC", width="100%")
-#      ),
-#      column(3,
-#             textInput("part3", "Sequence part 3", "GATAAGGATCCAATTAAAG", width="100%"),
-#             textInput("part7", "Sequence part 7", "GCAACTGCTGCAATGGCAA", width="100%"),
-#             textInput("part11", "Sequence part 11", "ACACCATTAGTTAAGGAAC", width="100%"),
-#             
-#      ),
-#      column(3,
-#             textInput("part4", "Sequence part 4", "CAAGATACATGGTATTACC", width="100%"),
-#             textInput("part8", "Sequence part 8", "CACCAGATATCGCTAACGA", width="100%"),
-#             textInput("part12", "Sequence part 12", "TGCAATCAATTAATTTGCC", width="100%")
-#      )
-    ),
-  fluidRow(
-    column(3,
-           textInput("stickyStart", "Start sticky end sequence", "ttta", width="100%")
-    ),
-    column(3,
-           textInput("stickyEnd", "End sticky end sequence", "tggc", width="100%")
-    ),
-    column(3,
-           textInput("sideMargin", "Min. part split size", "3", width="100%")
-    ),
-    column(3)
-  ),
-  fluidRow(
-    column(6,
-           actionButton("genButton", "Generate primers",  width = "100%", height="100%")
-    ),
-    column(6,
-           uiOutput("warningsTitle"),
-           verbatimTextOutput("warnings"),
-           tags$head(tags$style("#warnings{color: red;overflow-y:scroll;max-height: 100px;}"))
-           
-    )
-  ),
-  fluidRow(
-    column(12, DT::dataTableOutput("outpPrim", width="100%"))
   )
 )
 

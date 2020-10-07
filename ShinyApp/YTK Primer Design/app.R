@@ -127,45 +127,63 @@ enzymeRecExtraTexts = c("", "", " (NotI is used for linearisation of integration
 
 ui <- fluidPage(
   titlePanel("Yeast Toolkit Primer Design Tool"), 
-  p("Here goes a nice description of the tool"),
-  fluidRow(
-    column(12,
-           textAreaInput2("inputSeq", "Input sequence", width="100%", resize="none", cols=140, rows=8)
-    )
-  ),
-  fluidRow(
-    column(6,
-           mainPanel(width="100%",
-                     fluidRow(
-                       column(6, selectInput("startCombo", "Part type prefix", startValueNames,  width = "100%", selectize = F)),
-                       column(6, selectInput("endCombo", "Part type suffix", endValueNames,  width = "100%", selectize = F))
-                     ),
-                     fluidRow(
-                       column(4, checkboxInput("filterCheck", "Filter primers", T)),
-                       column(4, actionButton("genButton", "Gen. primers",  width = "100%")),
-                       column(4,actionButton("expButton", "Export FASTA",  width = "100%"))
-                     )
-                     
-           )
-           
+  tabsetPanel(
+    id = 'mainTab',
+    tabPanel("Application", 
+      fluidRow(
+        column(12,
+               textAreaInput2("inputSeq", "Input sequence", width="100%", resize="none", cols=140, rows=8)
+        )
+      ),
+      fluidRow(
+        column(6,
+               mainPanel(width="100%",
+                         fluidRow(
+                           column(6, selectInput("startCombo", "Part type prefix", startValueNames,  width = "100%", selectize = F)),
+                           column(6, selectInput("endCombo", "Part type suffix", endValueNames,  width = "100%", selectize = F))
+                         ),
+                         fluidRow(
+                           column(4, checkboxInput("filterCheck", "Filter primers", T)),
+                           column(4, actionButton("genButton", "Gen. primers",  width = "100%")),
+                           column(4,actionButton("expButton", "Export FASTA",  width = "100%"))
+                         )
+                         
+               )
+               
+        ),
+        column(6,
+               uiOutput("warningsTitle"),
+               verbatimTextOutput("warnings"),
+               tags$head(tags$style("#warnings{color: red;overflow-y:scroll;max-height: 100px;}"))
+    
+        )
+      ),
+      fluidRow(
+        column(12,
+               conditionalPanel(
+                 'output.primersGenerated === "t"',
+                 tabsetPanel(
+                    id = 'outputTab',
+                    tabPanel("Forward primer", DT::dataTableOutput("outpFwd", width="100%")),
+                    tabPanel("Reverse primer", DT::dataTableOutput("outpRev", width="100%"))
+                 )
+               )
+        )
+      )
     ),
-    column(6,
-           uiOutput("warningsTitle"),
-           verbatimTextOutput("warnings"),
-           tags$head(tags$style("#warnings{color: red;overflow-y:scroll;max-height: 100px;}"))
-
-    )
-  ),
-  fluidRow(
-    column(12,
-           conditionalPanel(
-             'output.primersGenerated === "t"',
-             tabsetPanel(
-                id = 'outputTab',
-                tabPanel("Forward primer", DT::dataTableOutput("outpFwd", width="100%")),
-                tabPanel("Reverse primer", DT::dataTableOutput("outpRev", width="100%"))
-             )
-           )
+    tabPanel("Instructions", 
+            h2("Summary"),
+            p(HTML("This tool was published in 'ourPaperReference'. It can be used to design new genetic parts for modular cloning in <i>Saccharomyces cerevisiae</i>. The underlying methodology was developed by Lee et al. (2015). The design tool will provide a list of primer sequences with type-specific overhangs. Additionally, the sequence of the Golden Gate Assembly (Engler et al. 2008) of the PCR product and the entry vector pYTK001 can be downloaded as a FASTA file. For more information see Lee et al. (2015) and 'ourPaperReference'.<br>")),
+            h2("Instructions"),
+            p(HTML("  1. Paste the DNA sequence you want to include in the toolkit<br>")),
+            p(HTML("  2. Choose the desired type-specific overhangs from the dropdown menus<br>")),
+            p(HTML("  3. Press 'Gen. primers' to generate a list of forward and reverse primers. The user can pick a primer pair depending on the length, GC-content and melting temperature of the template-binding sequence<br>")),
+            p(HTML("  4. A warning will be displayed if BsaI, BsmBI, BglII, BamHI, XhoI or NotI recognition sites are found<br>")),
+            p(HTML("  5. Download the plasmid sequence (Golden Gate Assembly of PCR product and pYTK001 using BsmBI) by pressing 'Export FASTA'<br>")),
+            h2("References"),
+            p(HTML("Our reference<br>")),
+            p(HTML('Lee, M. E., et al. (2015). "A Highly Characterized Yeast Toolkit for Modular, Multipart Assembly." ACS Synthetic Biology 4(9): 975-986.<br>')),
+            p(HTML('Engler, C., et al. (2008). "A One Pot, One Step, Precision Cloning Method with High Throughput Capability." PLoS One 3(11): e3647.<br>')),
     )
   ),
   bsModal("expModalDlg", "Export FASTA", "expButton", size = "large",textInput('filename', 'Filename', "Sequence"), downloadButton('downloadSeq', 'Download'))
@@ -223,8 +241,8 @@ onGenButton = function(input, output, session) {
 #  print(forwardPrimer)
 #  print(reversePrimer)
   
-  colnames(dfFwd) = c("Primer sequence", "GC", "Len", "Melt Tm")
-  colnames(dfRev) = c("Primer sequence", "GC", "Len", "Melt Tm")
+  colnames(dfFwd) = c("Primer sequence", "GC", "Len", "Tm")
+  colnames(dfRev) = c("Primer sequence", "GC", "Len", "Tm")
   
   output$outpFwd = DT::renderDataTable(DT::datatable({dfFwd}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
   output$outpRev = DT::renderDataTable(DT::datatable({dfRev}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
@@ -249,11 +267,11 @@ onGenButton = function(input, output, session) {
   #issue warnings for certain parts, since the start/end codon is included in the primer
   if (input$startCombo == "Type 3" | input$startCombo == "Type 3A") {
     strWarn = paste0(strWarn,
-                    "Start codon is already included in fwd primer. Do not include stop codon in pasted sequence if part will be used as fusion or tagged protein.\n")
+                    "Start codon is already included in fwd primer. Do not include stop codon in pasted sequence if part will be used as fusion or tagged protein. (see Lee et al. 2015)\n")
   }
   if (input$endCombo == "Type 3B") {
     strWarn = paste0(strWarn,
-                    "Stop codon is already included in rev primer. Do not include stop codon in pasted sequence if part will be used as fusion or tagged protein.\n")
+                    "Do not include stop codon in pasted sequence if part will be used as fusion or tagged protein. (see Lee et al. 2015)\n")
   }
 #Test scrollbar
 #  for (i in 1:10) {
@@ -276,10 +294,11 @@ server <- function(input, output, session) {
   })
 
   output$downloadSeq <- downloadHandler(
-    filename = paste0(input$filename, ".FASTA"),
+    filename = function(){ paste0(input$filename, ".FASTA")
+    },
     #filename = paste0("test", ".FASTA"),
     content = function(file) {
-      stringsToWrite = paste0(">Yeast toolkit export. Name: ", input$filename, " Starts at ", input$startCombo, ", ends at ", input$endCombo)
+      stringsToWrite = paste0("> ", input$startCombo, "-", input$filename, "-", input$endCombo)
       
       #generate sequence
       fwdOverhangStd = "TCGGTCTCA"
