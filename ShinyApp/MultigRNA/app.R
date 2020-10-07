@@ -268,17 +268,34 @@ filterFindSeqCombData = function() {
         } 
       }
       if (length(toRem) > 0) {
-        cutSeqsLoc[[part]] = cutSeqsLoc[[part]][-toRem]
-        piecesLoc[[part]] = piecesLoc[[part]][-toRem]
-        conflPiecesLoc[[part]] = conflPiecesLoc[[part]][-toRem]
+        print(-toRem)
+        print(part)
+        print(cutSeqsLoc)
+        print(piecesLoc)
+        print(conflPiecesLoc)
+        cutSeqsLoc[[part]] = cutSeqsLoc[[part]][-toRem, drop=F]
+        piecesLoc[[part]] = piecesLoc[[part]][-toRem, drop=F]
+        conflPiecesLoc[[part]] = conflPiecesLoc[[part]][-toRem, drop=F]
       }
     }
+    
+    print("passed")
     
     #now write to global vars
     cutSeqs <<- cutSeqsLoc
     pieces <<- piecesLoc
     conflPieces <<- conflPiecesLoc
   }
+}
+
+checkData = function() {
+  for (part in 1:length(partStrings)) {
+    if (length(cutSeqs[[part]]) == 0) {
+      return (F)
+    }
+  }
+  
+  return (T)
 }
 
 #The recursive function to find the right combination of places to cut the parts
@@ -461,46 +478,56 @@ onGenButton = function(input, output, session) {
   if (res[[1]]) {
     prepareFindSeqCombData()
     filterFindSeqCombData()
+    if (checkData()) {
     
-    # All global variables set, run the recursive function to find the place to cut each part
-    res = findSeqComb()
-    if (res[[1]]) {
+      # All global variables set, run the recursive function to find the place to cut each part
+      res = findSeqComb()
+      if (res[[1]]) {
+      
+        #extract the resulting sticky end sequences
+        seqs = extractSeqs(res)
     
-      #extract the resulting sticky end sequences
-      seqs = extractSeqs(res)
-  
-      #now find where this is in the parts:
-      positions = extractPositions(seqs)
-      print(positions)
-      
-      #generate primers:
-      primers = genPrimers(positions)
-      dfPrim = data.frame(Forward = primers[[1]], Reverse = primers[[2]], stringsAsFactors = F)
-      colnames(dfPrim) = c("Forward primer", "Reverse primer")
-      
-      output$outpPrim = DT::renderDataTable(DT::datatable({dfPrim}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
-      
-      allSeqs = c(startPart, partStrings, endPart)
-        partStrings = NULL
-      startPart = NULL
-      endPart = NULL
-      
-      for (s in 1:length(allSeqs)) {
-        for (i in 1:length(enzymeRecSitesIds)) {
-          ind = strfind(allSeqs[[s]], enzymeRecSitesSeqs[i])
-          if (length(ind) > 0) {
-            strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in seq: ", enzymeRecSitesIds[i], ": ", enzymeRecSitesSeqs[i], " in part ", s, "\n")
-          }
-          #if the enzymes are not the same after reverse and complement (which some are), look for the reverse complement as well
-          #This was tested manually
-          revCompl = reverse(complementary(enzymeRecSitesSeqs[i]))
-          if (enzymeRecSitesSeqs[i] != revCompl) {
-            ind = strfind(allSeqs[[s]], revCompl)
+        #now find where this is in the parts:
+        positions = extractPositions(seqs)
+        print(positions)
+        
+        #generate primers:
+        primers = genPrimers(positions)
+        dfPrim = data.frame(Forward = primers[[1]], Reverse = primers[[2]], stringsAsFactors = F)
+        colnames(dfPrim) = c("Forward primer", "Reverse primer")
+        
+        output$outpPrim = DT::renderDataTable(DT::datatable({dfPrim}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
+        
+        allSeqs = c(startPart, partStrings, endPart)
+          partStrings = NULL
+        startPart = NULL
+        endPart = NULL
+        
+        for (s in 1:length(allSeqs)) {
+          for (i in 1:length(enzymeRecSitesIds)) {
+            ind = strfind(allSeqs[[s]], enzymeRecSitesSeqs[i])
             if (length(ind) > 0) {
-              strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in the reverse compl. seq: ", enzymeRecSitesIds[i], ": ", revCompl, " in part ", s, "\n")
+              strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in seq: ", enzymeRecSitesIds[i], ": ", enzymeRecSitesSeqs[i], " in part ", s, "\n")
+            }
+            #if the enzymes are not the same after reverse and complement (which some are), look for the reverse complement as well
+            #This was tested manually
+            revCompl = reverse(complementary(enzymeRecSitesSeqs[i]))
+            if (enzymeRecSitesSeqs[i] != revCompl) {
+              ind = strfind(allSeqs[[s]], revCompl)
+              if (length(ind) > 0) {
+                strWarn = paste0(strWarn, "Restr. enzyme recogn. site found in the reverse compl. seq: ", enzymeRecSitesIds[i], ": ", revCompl, " in part ", s, "\n")
+              }
             }
           }
         }
+      } else {
+        showModal(modalDialog(
+          title = "Generation failure.",
+          "Couldn't find unique internal sticky ends.",
+          easyClose = TRUE,
+          footer = NULL
+        ))
+        output$outpPrim = DT::renderDataTable(DT::datatable({NULL}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
       }
     } else {
       showModal(modalDialog(
