@@ -58,6 +58,9 @@ compChar = function(s) {
 
 
 complementary = function(s) {
+  if (s == "") {
+    return ("")
+  }
   ss = strsplit(s,"")[[1]]
   ret = ""
   for (i in 1:length(ss)) {
@@ -231,7 +234,7 @@ onGenButton = function(input, output, session) {
     reversePrimer = reverse(substr(sq, str_length(sq) - le + 1, str_length(sq))) #reverses automatically
     if ((!input$filterCheck) | checkPrimer(reversePrimer)) {
       #revPrimTot = paste0(tolower(complementary(reverse(univEndTag))), '<span style="color:red">', tolower(endValueStopCodon),"</span><u>", tolower(endValueExtra),"</u><b>", tolower(endTag), "</b>", complementary(reversePrimer)) 
-      revPrimTot = paste0(tolower(complementary(reverse(univEndTag))), tolower(endValueStopCodon), tolower(endValueExtra),"<b>", tolower(endTag), "</b>", complementary(reversePrimer)) 
+      revPrimTot = paste0(tolower(complementary(reverse(univEndTag))), "<b>", tolower(reverse(complementary(endTag))), "</b>", tolower(reverse(complementary(endValueExtra))), tolower(reverse(complementary(endValueStopCodon))), complementary(reversePrimer)) 
       dfRev = rbind(dfRev, c(revPrimTot,
                              round(gcContent(reversePrimer), 2),
                              le,
@@ -303,12 +306,17 @@ server <- function(input, output, session) {
       #generate sequence
       fwdOverhangStd = "TCGGTCTCA"
       fwdOverhangTypeSpec = lookup(input$startCombo, startValueNames, startValueVals)
+      fwdOverhangTypeSpecExtra = lookup(input$startCombo, startValueNames, startValueExtras)
+      fwdOverhangTypeStopCodon = lookup(input$startCombo, startValueNames, startValueStopCodons)
       seq = cleanupSeq(input$inputSeq)
       revOverhangStd = "TGAGACC"
       revOverhangTypeSpec = lookup(input$endCombo, endValueNames, endValueVals)
+      revOverhangTypeSpecExtra = lookup(input$endCombo, endValueNames, endValueExtras)
+      revOverhangTypeStopCodon = lookup(input$endCombo, endValueNames, endValueStopCodons)
+      
       backbone = "AGACCAATAAAAAACGCCCGGCGGCAACCGAGCGTTCTGAACAAATCCAGATGGAGTTCTGAGGTCATTACTGGATCTATCAACAGGAGTCCAAGCGAGCTCGATATCAAATTACGCCCCGCCCTGCCACTCATCGCAGTACTGTTGTAATTCATTAAGCATTCTGCCGACATGGAAGCCATCACAAACGGCATGATGAACCTGAATCGCCAGCGGCATCAGCACCTTGTCGCCTTGCGTATAATATTTGCCCATGGTGAAAACGGGGGCGAAGAAGTTGTCCATATTGGCCACGTTTAAATCAAAACTGGTGAAACTCACCCAGGGATTGGCTGAAACGAAAAACATATTCTCAATAAACCCTTTAGGGAAATAGGCCAGGTTTTCACCGTAACACGCCACATCTTGCGAATATATGTGTAGAAACTGCCGGAAATCGTCGTGGTATTCACTCCAGAGCGATGAAAACGTTTCAGTTTGCTCATGGAAAACGGTGTAACAAGGGTGAACACTATCCCATATCACCAGCTCACCGTCTTTCATTGCCATACGAAATTCCGGATGAGCATTCATCAGGCGGGCAAGAATGTGAATAAAGGCCGGATAAAACTTGTGCTTATTTTTCTTTACGGTCTTTAAAAAGGCCGTAATATCCAGCTGAACGGTCTGGTTATAGGTACATTGAGCAACTGACTGAAATGCCTCAAAATGTTCTTTACGATGCCATTGGGATATATCAACGGTGGTATATCCAGTGATTTTTTTCTCCATTTTAGCTTCCTTAGCTCCTGAAAATCTCGATAACTCAAAAAATACGCCCGGTAGTGATCTTATTTCATTATGGTGAAAGTTGGAACCTCTTACGTGCCCGATCAATCATGACCAAAATCCCTTAACGTGAGTTTTCGTTCCACTGAGCGTCAGACCCCGTAGAAAAGATCAAAGGATCTTCTTGAGATCCTTTTTTTCTGCGCGTAATCTGCTGCTTGCAAACAAAAAAACCACCGCTACCAGCGGTGGTTTGTTTGCCGGATCAAGAGCTACCAACTCTTTTTCCGAAGGTAACTGGCTTCAGCAGAGCGCAGATACCAAATACTGTTCTTCTAGTGTAGCCGTAGTTAGGCCACCACTTCAAGAACTCTGTAGCACCGCCTACATACCTCGCTCTGCTAATCCTGTTACCAGTGGCTGCTGCCAGTGGCGATAAGTCGTGTCTTACCGGGTTGGACTCAAGACGATAGTTACCGGATAAGGCGCAGCGGTCGGGCTGAACGGGGGGTTCGTGCACACAGCCCAGCTTGGAGCGAACGACCTACACCGAACTGAGATACCTACAGCGTGAGCTATGAGAAAGCGCCACGCTTCCCGAAGGGAGAAAGGCGGACAGGTATCCGGTAAGCGGCAGGGTCGGAACAGGAGAGCGCACGAGGGAGCTTCCAGGGGGAAACGCCTGGTATCTTTATAGTCCTGTCGGGTTTCGCCACCTCTGACTTGAGCGTCGATTTTTGTGATGCTCGTCAGGGGGGCGGAGCCTATGGAAAAACGCCAGCAACGCGGCCTTTTTACGGTTCCTGGCCTTTTGCTGGCCTTTTGCTCACATGTTCTTTCCTGCGTTATCCCCTGATTCTGTGGATAACCGTAG"
       
-      totSeqToExp = paste0(fwdOverhangStd, fwdOverhangTypeSpec, seq, revOverhangTypeSpec, revOverhangStd, backbone)
+      totSeqToExp = paste0(fwdOverhangStd, fwdOverhangTypeSpec, fwdOverhangTypeStopCodon, fwdOverhangTypeSpecExtra, seq, revOverhangTypeStopCodon, revOverhangTypeSpecExtra, revOverhangTypeSpec, revOverhangStd, backbone)
 
       
       ll = str_length(totSeqToExp)
