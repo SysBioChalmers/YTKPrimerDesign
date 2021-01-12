@@ -403,7 +403,7 @@ genPrimers = function(positions) {
     }
     if (i == length(partStrings)) {
       rightPart = endPart
-      et = paste0(tolower(endTag), "a")
+      et = paste0(tolower(reverse(complementary(endTag))), "")
     } else {
       rightPart = substr(partStrings[[i+1]], 1, positions[[i+1]] + 3)
       et = ""
