@@ -112,9 +112,13 @@ endValueVals = c("AACG", "TATG", "ATCC", "TTCT", "ATCC", "GCTG", "TGGC", "GCTG",
 endValueExtras = c("", "AGATC", "GG", "GG", "GG", "", "CTCGAG", "", "ACTAGTGCACTGCAG",  "", "", "GCGGCCGC", "GCGGCCGC", "")
 endValueStopCodons = c("", "", "", "", "", "", "TAA", "", "", "", "", "", "", "")
 
-enzymeRecSitesIds = c("BsaI", "BsmBI", "NotI", "BglII", "BamHI", "XhoI")
-enzymeRecSitesSeqs = c("GGTCTC", "CGTCTC", "GCGGCCGC", "AGATCT", "GGATCC", "CTCGAG")
+enzymeRecSitesIds = c("BsaI", "BsmBI", "NotI", "EcoRI", "XbaI", "SpeI", "PstI", "BglII", "BamHI", "XhoI")
+enzymeRecSitesSeqs = c("GGTCTC", "CGTCTC", "GCGGCCGC", "GAATTC", "TCTAGA", "ACTAGT", "CTGCAG", "AGATCT", "GGATCC", "CTCGAG")
 enzymeRecExtraTexts = c("", "", " (NotI is used for linearisation of integration cassettes)",
+                        " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)",
+                        " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)",
+                        " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)",
+                        " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)",
                         " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)",
                         " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)",
                         " (Restriction site should be removed if part will also be used as BioBrick or BglBrick)")
@@ -181,7 +185,7 @@ ui <- fluidPage(
             p(HTML("  1. Paste the DNA sequence you want to include in the toolkit<br>")),
             p(HTML("  2. Choose the desired type-specific overhangs from the dropdown menus<br>")),
             p(HTML("  3. Press 'Gen. primers' to generate a list of forward and reverse primers. The user can pick a primer pair depending on the length, GC-content and melting temperature of the template-binding sequence<br>")),
-            p(HTML("  4. A warning will be displayed if BsaI, BsmBI, BglII, BamHI, XhoI or NotI recognition sites are found<br>")),
+            p(HTML("  4. A warning will be displayed if BsaI, BsmBI, EcoRI, XbaI, SpeI, PstI, BglII, BamHI, XhoI or NotI recognition sites are found<br>")),
             p(HTML("  5. Download the plasmid sequence (Golden Gate Assembly of PCR product and pYTK001 using BsmBI) by pressing 'Export FASTA'<br>")),
             h2("References"),
             p(HTML("Our reference<br>")),
