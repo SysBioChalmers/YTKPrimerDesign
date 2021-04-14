@@ -154,6 +154,10 @@ endPart = NULL
 cutSeqs = NULL
 pieces = NULL
 conflPieces = NULL
+pieces2 = NULL
+conflPieces2 = NULL
+pieces3 = NULL
+conflPieces3 = NULL
 numParts = NULL
 startTag = NULL
 endTag = NULL
@@ -202,8 +206,15 @@ prepareFindSeqCombData = function() {
   {
     #first create all possible sequences and their conflicting pieces of length 3
     cutSeqsLoc = vector(mode = "list", length = length(partStrings)) #the 4-letter cut site
+    #conflPiecesLoc = vector(mode = "list", length = length(partStrings)) #the 4 three letter pieces that needs to be checked against the pieces of other cutSeqs
+    #So, we should check the following: (1,2,3), (2,3,4), (1,2,4), (1,3,4), and their reverse complements
+    #we therefore place (1,2,3), (2,3,4) and their reverse complements in pieces and and conflPieces, and the others the ones named 2 and 3
     piecesLoc = vector(mode = "list", length = length(partStrings)) #the 2 three letter pieces
-    conflPiecesLoc = vector(mode = "list", length = length(partStrings)) #the 4 three letter pieces that needs to be checked against the pieces of other cutSeqs
+    conflPiecesLoc = vector(mode = "list", length = length(partStrings)) 
+    piecesLoc2 = vector(mode = "list", length = length(partStrings))
+    conflPiecesLoc2 = vector(mode = "list", length = length(partStrings)) 
+    piecesLoc3 = vector(mode = "list", length = length(partStrings))
+    conflPiecesLoc3 = vector(mode = "list", length = length(partStrings)) 
     for (part in 1:length(partStrings)) {
       partLen = str_length(partStrings[part])
       sm = min(sideMargin, floor((partLen -4)/2)) #make sure at least 1 index is available
@@ -213,6 +224,10 @@ prepareFindSeqCombData = function() {
       cs = rep("", numCuts)
       pcs = vector(mode = "list", length = numCuts)
       confl = vector(mode = "list", length = numCuts)
+      pcs2 = vector(mode = "list", length = numCuts)
+      confl2 = vector(mode = "list", length = numCuts)
+      pcs3 = vector(mode = "list", length = numCuts)
+      confl3 = vector(mode = "list", length = numCuts)
       
       #sort the cuts in a better order, starting from the middle
       center = ceiling((partLen-3)/2)
@@ -237,20 +252,38 @@ prepareFindSeqCombData = function() {
         pcs[[j]] = c(substr(partStrings[part], i, i+2), substr(partStrings[part], i+1, i+3))
         confl[[j]] = c(substr(partStrings[part], i, i+2), substr(partStrings[part], i+1, i+3), 
                        complementary(reverse(substr(partStrings[part], i, i+2))), complementary(reverse(substr(partStrings[part], i+1, i+3))))
+        pcs2[[j]] = paste0(substr(partStrings[part], i, i+1), substr(partStrings[part], i+3, i+3))
+        pcs3[[j]] = paste0(substr(partStrings[part], i, i), substr(partStrings[part], i+2, i+3))
+        #So, this is tricky - it is the reverse complement of (1,3,4) that can conflict with (1,2,4) and vice versa
+        #this needs to be taken care of later in the algorithm!
+        confl2[[j]] = c(pcs2[[j]], complementary(reverse(pcs2[[j]])))
+        confl3[[j]] = c(pcs3[[j]], complementary(reverse(pcs3[[j]])))
       }
       cutSeqsLoc[[part]] = cs
       piecesLoc[[part]] = pcs
       conflPiecesLoc[[part]] = confl
+      piecesLoc2[[part]] = pcs2
+      conflPiecesLoc2[[part]] = confl2
+      piecesLoc3[[part]] = pcs3
+      conflPiecesLoc3[[part]] = confl3
     }
     
     #so, I realize this is a bit odd, but practical in this case... (write to global vars)
     cutSeqs <<- cutSeqsLoc
     pieces <<- piecesLoc
     conflPieces <<- conflPiecesLoc
+    pieces2 <<- piecesLoc2
+    conflPieces2 <<- conflPiecesLoc2
+    pieces3 <<- piecesLoc3
+    conflPieces3 <<- conflPiecesLoc3
   } else {
     cutSeqs <<- NULL
     pieces <<- NULL
     conflPieces <<- NULL
+    pieces2 <<- NULL
+    conflPieces2 <<- NULL
+    pieces3 <<- NULL
+    conflPieces3 <<- NULL
   }
 }
 
@@ -259,18 +292,36 @@ filterFindSeqCombData = function() {
   {
     #remove cutSeqs that are not compatible with themselves (such as AATT) or that conflicts with the start and end tags
     startEndPieces = c(substr(startTag, 1, 3), substr(startTag, 2, 4), substr(endTag, 1, 3), substr(endTag, 2, 4) )
-    
+    startEndPieces2 = c(paste0(substr(startTag, 1, 2), substr(startTag, 4, 4)), paste0(substr(endTag, 1, 2), substr(endTag, 4, 4)))
+    startEndPieces3 = c(paste0(substr(startTag, 1, 1), substr(startTag, 3, 4)), paste0(substr(endTag, 1, 1), substr(endTag, 3, 4)))
+
     cutSeqsLoc = cutSeqs
     piecesLoc = pieces
     conflPiecesLoc = conflPieces
+    piecesLoc2 = pieces2
+    conflPiecesLoc2 = conflPieces2
+    piecesLoc3 = pieces3
+    conflPiecesLoc3 = conflPieces3
     
     for (part in 1:length(partStrings)) {
       toRem = NULL
       numCuts = length(cutSeqsLoc[[part]])
       pcs = piecesLoc[[part]]
       confl = conflPiecesLoc[[part]]
+      pcs2 = piecesLoc2[[part]]
+      confl2 = conflPiecesLoc2[[part]]
+      pcs3 = piecesLoc3[[part]]
+      confl3 = conflPiecesLoc3[[part]]
       for (i in 1:numCuts) {
-        if (any(pcs[[i]] %in% confl[[i]][3:4]) | any(startEndPieces %in% confl[[i]][1:4])) { #first check is compatible with self, second with start and end tags
+        #first (1,2,3) and (2,3,4) checks
+        failure = any(pcs[[i]] %in% confl[[i]][3:4]) | any(startEndPieces %in% confl[[i]][1:4])#first check is compatible with self, second with start and end tags
+        if (failure) {
+          print(paste0("filtered 1 ", pcs[[i]][1], substr(pcs[[i]][2],3,3), " ",paste(pcs[[i]] %in% confl[[i]][3:4], collapse=" "), " - ",paste(startEndPieces %in% confl[[i]][1:4], collapse=" ")))
+        }
+        #then (1,2,4) need to compare (1,2,4) with rev compl of (1,3,4)
+        failure = failure | pcs2[[i]] == confl3[[i]][2] | any(startEndPieces2 %in% confl2[[i]][1]) | any(startEndPieces2 %in% confl3[[i]][2])
+        failure = failure | pcs3[[i]] == confl2[[i]][2] | any(startEndPieces3 %in% confl3[[i]][1]) | any(startEndPieces3 %in% confl2[[i]][2])
+        if (failure) { 
           toRem = c(toRem, i)
           print(paste0("Removing: ", cutSeqsLoc[[part]][[i]]))
         } 
@@ -317,6 +368,8 @@ findSeqComb = function(selVector = NULL) {
     return (list(T, selVector)) #we have succeeded, there are no more to find
   }
   confl = conflPieces[[currPart]]
+  confl2 = conflPieces2[[currPart]]
+  confl3 = conflPieces3[[currPart]]
   numCuts = length(cutSeqs[[currPart]])
   for(i in 1:numCuts) {
     #check if this cut is compatible with the previous
@@ -326,6 +379,10 @@ findSeqComb = function(selVector = NULL) {
 #        print (selVector)
 #        print(j)
         success = success & !any(pieces[[j]][[selVector[j]]] %in% confl[[i]])
+        #handle (1,2,4) - need to compare with rev compl of (1,3,4)
+        success = success & (pieces2[[j]][[selVector[j]]] != confl2[[i]][1]) & (pieces2[[j]][[selVector[j]]] != confl3[[i]][2])
+        #handle (1,3,4) - need to compare with rev compl of (1,2,4)
+        success = success & (pieces3[[j]][[selVector[j]]] != confl3[[i]][1]) & (pieces3[[j]][[selVector[j]]] != confl2[[i]][2])
       }
     }
     if (success) {
@@ -428,9 +485,24 @@ genPrimers = function(positions, standardFwdEnd, standardRevEnd) {
 }
 
 
+innerLoopTest = function(selVector, pieces, pieces2, pieces3, confl, confl2, confl3, i) {
+  success = TRUE
+  for (j in 1:length(selVector)) {
+    #        print (selVector)
+    #        print(j)
+    success = success & !any(pieces[[j]][[selVector[j]]] %in% confl[[i]])
+    #handle (1,2,4) - need to compare with rev compl of (1,3,4)
+    success = success & (pieces2[[j]][[selVector[j]]] != confl2[[i]][1]) & (pieces2[[j]][[selVector[j]]] != confl3[[i]][2])
+    #handle (1,3,4) - need to compare with rev compl of (1,2,4)
+    success = success & (pieces3[[j]][[selVector[j]]] != confl3[[i]][1]) & (pieces3[[j]][[selVector[j]]] != confl2[[i]][2])
+  }
+  
+  return (success)
+}
+
 testStuff = function() {
   
-  partStrings <<- c("ACGTTCAATTCCCGAAGCGG", "AAGAATTGTTCCC")
+  partStrings <<- c("ACGTTCAATTCCCGAAGCGG", "AAGACTTGTTAGCCC")
   numParts <<- length(partStrings)
   startTag <<- "CCAA"
   endTag <<- "GTTG"
@@ -439,7 +511,7 @@ testStuff = function() {
   prepareFindSeqCombData()
   
   expRes = c("TTCC", "TCCC", "ATTC", "CCCG", "AATT", "CCGA", "CAAT", "CGAA", "TCAA", "GAAG", "TTCA")
-  expRes2 = c("ATTG", "TTGT", "AATT", "TGTT")
+  expRes2 = c("TTGT", "TGTT", "CTTG", "GTTA", "ACTT", "TTAG")
   #print(cutSeqs[[1]])
   #print(cutSeqs[[2]])
   #check cutSeqs
@@ -447,14 +519,23 @@ testStuff = function() {
   print(all(cutSeqs[[2]] == expRes2))
   #check pieces (only check 1 item)
   all(pieces[[1]][[6]] == c("CCG", "CGA"))
+  pieces2[[1]][[6]] == "CCA"
+  pieces3[[1]][[6]] == "CGA"
   #check conflPieces (only check 1 item)
   all(conflPieces[[1]][[6]] == c("CCG", "CGA", "CGG", "TCG"))
+  all(conflPieces2[[1]][[6]] == c("CCA", "TGG"))
+  all(conflPieces3[[1]][[6]] == c("CGA", "TCG"))
   
   #now test filtering
+  print(cutSeqs[[1]])# "TTCC" "TCCC" "ATTC" "CCCG" "AATT"(confl with itself) "CCGA"(confl start tag, (1,3,4)) "CAAT"(confl both start and end tag) 
+  #"CGAA"(confl start tag(1,3,4)) "TCAA"(confl start tag) "GAAG" "TTCA"
+  #start seq = "CCAA" (TTGG), end seq = "GTTG" (CAAC)
+  print(cutSeqs[[2]])# "TTGT"(confl end tag) "TGTT"(confl end tag) "CTTG"(confl end tag) "GTTA"(confl end tag) "ACTT" "TTAG"(rev confl with start tag (1,2,4))
   filterFindSeqCombData()
-  print(cutSeqs[[1]])
-  expRes = c("TTCC", "TCCC", "ATTC", "CCCG", "CCGA", "CGAA", "GAAG", "TTCA")
-  expRes2 = c("TGTT")
+  print(cutSeqs[[1]])#"TTCC" "TCCC" "ATTC" "CCCG" "GAAG" "TTCA"
+  print(cutSeqs[[2]])#"ACTT"
+  expRes = c("TTCC", "TCCC", "ATTC", "CCCG", "GAAG", "TTCA")
+  expRes2 = c("ACTT")
   print(all(cutSeqs[[1]] == expRes))
   print(all(cutSeqs[[2]] == expRes2))
   
@@ -479,7 +560,73 @@ testStuff = function() {
     newSeqs[[i]] = substr(partStrings[[i]], positions[i], positions[i]+3)
   }
   all(expRes == newSeqs)
+  
+  #now test the inner loop in findSeqComb, don't want to make it a function due to performance
+  #So, the code is copied here instead. When testing, make sure the code is the same!
+
+  #look at ATCG (CGAT)
+  i=1
+  confl= list(c("ATC","TCG","CGA","GAT"))
+  confl2= list(c("ATG","CAT"))
+  confl3= list(c("ACG","CGT"))
+  
+  #we also just check against 1 level of previous selections
+  selVector = 1
+  
+  #TCGA should fail, first check
+  pieces = list(list(c("TCG","CGA"))) #this is what we want to test against
+  pieces2 = list(list(c("TCA"))) #this is what we want to test against
+  pieces3 = list(list(c("TGA"))) #this is what we want to test against
+  
+  innerLoopTest(selVector, pieces, pieces2, pieces3, confl, confl2, confl3, i) == FALSE
+
+  #ATTG should fail, second check (1,2,4)
+  pieces = list(list(c("ATT","TTG"))) #this is what we want to test against
+  pieces2 = list(list(c("ATG"))) #this is what we want to test against
+  pieces3 = list(list(c("ATG"))) #this is what we want to test against
+  
+  innerLoopTest(selVector, pieces, pieces2, pieces3, confl, confl2, confl3, i) == FALSE
+  
+  #CGTT should fail, second check rev (1,2,4)
+  pieces = list(list(c("CGT","GTT"))) #this is what we want to test against
+  pieces2 = list(list(c("CGT"))) #this is what we want to test against
+  pieces3 = list(list(c("CTT"))) #this is what we want to test against
+  
+  innerLoopTest(selVector, pieces, pieces2, pieces3, confl, confl2, confl3, i) == FALSE
+  
+  #AACG should fail, third check (1,3,4)
+  pieces = list(list(c("AAC","ACG"))) #this is what we want to test against
+  pieces2 = list(list(c("AAG"))) #this is what we want to test against
+  pieces3 = list(list(c("ACG"))) #this is what we want to test against
+  
+  innerLoopTest(selVector, pieces, pieces2, pieces3, confl, confl2, confl3, i) == FALSE
+  
+  #CAAT should fail, third check rev (1,3,4)
+  pieces = list(list(c("CAA","AAT"))) #this is what we want to test against
+  pieces2 = list(list(c("CAT"))) #this is what we want to test against
+  pieces3 = list(list(c("CAT"))) #this is what we want to test against
+  
+  innerLoopTest(selVector, pieces, pieces2, pieces3, confl, confl2, confl3, i) == FALSE
+
+  #Now test some things that should work
+  #CAGT should work
+  pieces = list(list(c("CAG","AGT"))) #this is what we want to test against
+  pieces2 = list(list(c("CAT"))) #this is what we want to test against
+  pieces3 = list(list(c("CGT"))) #this is what we want to test against
+  
+  innerLoopTest(selVector, pieces, pieces2, pieces3, confl, confl2, confl3, i) == TRUE
+  
+  #GGAA should work
+  pieces = list(list(c("GGA","GAA"))) #this is what we want to test against
+  pieces2 = list(list(c("GGA"))) #this is what we want to test against
+  pieces3 = list(list(c("GAA"))) #this is what we want to test against
+  
+  innerLoopTest(selVector, pieces, pieces2, pieces3, confl, confl2, confl3, i) == TRUE
+  
+  
 }
+
+
 
 onGenButton = function(input, output, session) {
   strWarn = ""
