@@ -502,8 +502,8 @@ onGenButton = function(input, output, session) {
         
         #generate primers:
         primers = genPrimers(positions, input$FwdBP, input$RevBP)
-        dfPrim = data.frame(Forward = primers[[1]], Reverse = primers[[2]], stringsAsFactors = F)
-        colnames(dfPrim) = c("Forward primer", "Reverse primer")
+        dfPrim = data.frame(Pair=1:length(primers[[1]]), Forward = primers[[1]], Reverse = primers[[2]], stringsAsFactors = F)
+        colnames(dfPrim) = c("Pair", "Forward primer", "Reverse primer")
         
         output$outpPrim = DT::renderDataTable(DT::datatable({dfPrim}, escape = F, width="100%", rownames = FALSE, class="compact", selection = 'none', options = list(dom = 't', pageLength = 20)))
         
