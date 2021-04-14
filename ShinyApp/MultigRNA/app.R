@@ -297,13 +297,14 @@ filterFindSeqCombData = function() {
 }
 
 checkData = function() {
-  for (part in 1:length(partStrings)) {
-    if (length(cutSeqs[[part]]) == 0) {
-      return (F)
+  if (length(partStrings) != 0) {
+    for (part in 1:length(partStrings)) {
+      if (length(cutSeqs[[part]]) == 0) {
+        return (FALSE)
+      }
     }
-  }
-  
-  return (T)
+  }  
+  return (TRUE)
 }
 
 #The recursive function to find the right combination of places to cut the parts
