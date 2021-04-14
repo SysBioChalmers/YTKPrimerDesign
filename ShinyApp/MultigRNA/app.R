@@ -42,6 +42,14 @@ ui <- fluidPage(
     tabPanel("Application",
       p(HTML("<br>")),
       fluidRow(
+        column(6,
+               textInput("FwdBP", "Forward primer binding part", "GTTTTAGAGCTAGAAATAGCAAGTTAA", width="100%"),
+        ),
+        column(6,
+               textInput("RevBP", "Reverse primer binding part", "TTTCTTAGCTGCCTATACGGCAG", width="100%"),
+        )
+      ),      
+      fluidRow(
         column(3,
                textInput("part1", "gRNA 1 sequence", width="100%"),
                textInput("part5", "gRNA 5 sequence", width="100%"),
@@ -378,10 +386,10 @@ extractPositions = function(seqs) {
 fwdFill = "gcat" #just space filler
 revFill = "atgc" #just space filler
 enz = "cgtctc" # recognition site for the restriction enzyme
-standardFwdEnd = "GTTTTAGAGCTAGAAATAGCAAGTTAA"
-standardRevEnd = "TTTCTTAGCTGCCTATACGGCAG"
+#standardFwdEnd = "GTTTTAGAGCTAGAAATAGCAAGTTAA"
+#standardRevEnd = "TTTCTTAGCTGCCTATACGGCAG"
 
-genPrimers = function(positions) {
+genPrimers = function(positions, standardFwdEnd, standardRevEnd) {
   
   #so, the first fragment will contain the whole first part (in a separate variable) and half of the first in the list (i+1)
   #the middle fragments will contain the second half of the i part and the first half of the i+1 part
@@ -492,7 +500,7 @@ onGenButton = function(input, output, session) {
         print(positions)
         
         #generate primers:
-        primers = genPrimers(positions)
+        primers = genPrimers(positions, input$FwdBP, input$RevBP)
         dfPrim = data.frame(Forward = primers[[1]], Reverse = primers[[2]], stringsAsFactors = F)
         colnames(dfPrim) = c("Forward primer", "Reverse primer")
         
